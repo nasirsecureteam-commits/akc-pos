@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AKC POS PWA + PDF Invoice</title><meta name="theme-color" content="#0ea5e9" />
+<link rel="manifest" href="manifest.json" /><link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"><!-- jsPDF Library --><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><style>
+body{margin:0;font-family:Rajdhani;background:#07121f;color:#fff}
+.header{padding:12px;background:#0ea5e9;display:flex;justify-content:space-between;align-items:center}
+.container{padding:12px}
+.card{background:#0f2236;padding:10px;border-radius:10px;border:1px solid #123;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+.btn{padding:10px;background:#0ea5e9;border:none;border-radius:10px;color:#fff;width:100%;margin-top:10px}
+.small{font-size:12px;color:#aaa}
+input,select{width:100%;padding:8px;border-radius:8px;border:none;margin-top:5px}
+</style></head>
+<body><div class="header">
+<div>AKC POS + PDF</div>
+</div><div class="container"><div class="card">
+<div class="small">Products</div>
+<div id="products"></div>
+</div><div class="card">
+<div class="small">Cart</div>
+<div id="cart"></div>
+<div class="row"><b>Total</b><span id="total">0</span></div>
+<input id="discount" placeholder="Discount %" type="number"/>
+<button class="btn" onclick="checkout()">Generate PDF Invoice</button>
+<div id="memo"></div>
+</div></div><script>
+let cart=[];
+let products=[
+{name:"Rice",price:60,stock:20},
+{name:"Oil",price:180,stock:15},
+{name:"Sugar",price:90,stock:30}
+];
+
+function render(){
+let p=document.getElementById('products');
+p.innerHTML="";
+products.forEach((x,i)=>{
+let div=document.createElement('div');
+div.className="row";
+div.innerHTML=`<span>${x.name} (${x.stock})</span><button onclick='add(${i})'>Add</button>`;
+p.appendChild(div);
+});
+updateCart();
+}
+
+function add(i){
+if(products[i].stock<=0)return;
+cart.push(products[i]);
+products[i].stock--;
+render();
+}
+
+function updateCart(){
+let c=document.getElementById('cart');
+c.innerHTML="";
+let t=0;
+cart.forEach(x=>{c.innerHTML+=`<div class='row'><span>${x.name}</span><span>${x.price}</span></div>`;t+=x.price});
+document.getElementById('total').innerText=t;
+}
+
+function checkout(){
+const { jsPDF } = window.jspdf;
+let doc = new jsPDF();
+
+let total=parseFloat(document.getElementById('total').innerText);
+let discount=parseFloat(document.getElementById('discount').value)||0;
+let final=total-(total*discount/100);
+
+// Header
+doc.setFontSize(16);
+doc.text("AKC SALES INVOICE", 20, 20);
+
+// Items
+let y=40;
+cart.forEach((item,i)=>{
+  doc.text(item.name + " - " + item.price, 20, y);
+  y+=10;
+});
+
+// Total
+doc.text("Total: " + total, 20, y+10);
+doc.text("Discount: " + discount + "%", 20, y+20);
+doc.text("Final: " + final, 20, y+30);
+
+// Save PDF
+doc.save("invoice.pdf");
+
+}
+
+render();
+</script></body>
